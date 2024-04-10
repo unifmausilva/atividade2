@@ -1,102 +1,155 @@
-#include <stdio.h>
-#include <string.h>
-#include "tarefas.h" // Inclui o cabeçalho que contém as definições das funções e as estruturas de dados
+            #include <stdio.h>
+            #include <string.h>
+            #include "tarefas.h"
 
-// Função para criar uma nova tarefa
-ERROS criar(Tarefa tarefas[], int *pos) {
-    if (*pos >= TOTAL)
-        return MAX_TAREFA; // Retorna MAX_TAREFA se o limite de tarefas foi atingido
+            // Implementação da função para criar uma nova tarefa
+            ERROS criar(Tarefa tarefas[], int *pos){
+                // Verifica se o limite de tarefas foi atingido
+                if(*pos >= TOTAL)
+                    return MAX_TAREFA;
 
-    printf("Entre com a prioridade (entre 1 e 10): ");
-    scanf("%d", &tarefas[*pos].prioridade); // Lê a prioridade da tarefa
+                printf("Entre com a prioridade: ");
+                scanf("%d", &tarefas[*pos].prioridade);
+                clearBuffer(); // Limpa o buffer do teclado
 
-    while (tarefas[*pos].prioridade < 1 || tarefas[*pos].prioridade > 10) {
-        printf("Prioridade fora do intervalo permitido. Entre com um valor entre 1 e 10: ");
-        scanf("%d", &tarefas[*pos].prioridade); // Verifica se a prioridade está dentro do intervalo permitido
-    }
+                printf("Entre com a categoria: ");
+                fgets(tarefas[*pos].categoria, TAM_CATEGORIA, stdin); // Lê a categoria da tarefa
 
-    clearBuffer(); // Limpa o buffer do teclado
+                printf("Entre com a descricao: ");
+                fgets(tarefas[*pos].descricao, TAM_DESCRICAO, stdin); // Lê a descrição da tarefa
 
-    printf("Entre com a categoria: ");
-    fgets(tarefas[*pos].categoria, 100, stdin); // Lê a categoria da tarefa
-    tarefas[*pos].categoria[strcspn(tarefas[*pos].categoria, "\n")] = '\0'; // Remove a quebra de linha
+                *pos = *pos + 1; // Incrementa a posição atual no vetor de tarefas
 
-    printf("Entre com a descricao: ");
-    fgets(tarefas[*pos].descricao, 300, stdin); // Lê a descrição da tarefa
-    tarefas[*pos].descricao[strcspn(tarefas[*pos].descricao, "\n")] = '\0'; // Remove a quebra de linha
+                return OK; // Retorna OK para indicar sucesso na criação da tarefa
+            }
 
-    *pos = *pos + 1;
+            // Implementação da função para deletar uma tarefa
+            ERROS deletar(Tarefa tarefas[], int *pos){
+                // Verifica se existem tarefas a serem deletadas
+                if(*pos == 0)
+                    return SEM_TAREFAS;
 
-    return OK; // Retorna OK para indicar sucesso na criação da tarefa
-}
+                int pos_deletar;
+                printf("Entre com a posicao da tarefa a ser deletada: ");
+                scanf("%d", &pos_deletar);
+                pos_deletar--; // Ajusta a posição para o índice do array
+                if(pos_deletar >= *pos || pos_deletar < 0)
+                    return NAO_ENCONTRADO; // Retorna NAO_ENCONTRADO se a posição for inválida
 
-// Função para deletar uma tarefa
-ERROS deletar(Tarefa tarefas[], int *pos) {
-    if (*pos == 0)
-        return SEM_TAREFAS; // Retorna SEM_TAREFAS se não houver tarefas
+                // Desloca as tarefas para preencher o espaço da tarefa deletada
+                for(int i = pos_deletar; i < *pos; i++){
+                    tarefas[i].prioridade = tarefas[i+1].prioridade;
+                    strcpy(tarefas[i].categoria, tarefas[i+1].categoria);
+                    strcpy(tarefas[i].descricao,  tarefas[i+1].descricao);
+                }
 
-    int pos_deletar;
-    printf("Entre com a posicao da tarefa a ser deletada: ");
-    scanf("%d", &pos_deletar);
-    pos_deletar--;
+                *pos = *pos - 1; // Decrementa a posição atual no vetor de tarefas
 
-    if (pos_deletar >= *pos || pos_deletar < 0)
-        return NAO_ENCONTRADO; // Retorna NAO_ENCONTRADO se a posição for inválida
+                return OK; // Retorna OK para indicar que a tarefa foi deletada com sucesso
+            }
 
-    for (int i = pos_deletar; i < *pos; i++) {
-        // Desloca as tarefas para preencher o espaço da tarefa deletada
-        tarefas[i].prioridade = tarefas[i + 1].prioridade;
-        strcpy(tarefas[i].categoria, tarefas[i + 1].categoria);
-        strcpy(tarefas[i].descricao, tarefas[i + 1].descricao);
-    }
+            // Implementação da função para listar as tarefas
+            ERROS listar(Tarefa tarefas[], int *pos){
+                // Verifica se existem tarefas para listar
+                if(*pos == 0)
+                    return SEM_TAREFAS;
 
-    *pos = *pos - 1;
+                char categoria[TAM_CATEGORIA];
+                // Solicita a categoria para listar as tarefas correspondentes
+                printf("Digite a categoria para listar (deixe vazio para listar todas): ");
+                fgets(categoria, TAM_CATEGORIA, stdin);
+                if (categoria[0] == '\n') {
+                    // Lista todas as tarefas se a categoria estiver vazia
+                    for(int i=0; i<*pos; i++){
+                        printf("Prioridade: %d\t", tarefas[i].prioridade);
+                        printf("Categoria: %s\t", tarefas[i].categoria);
+                        printf("Descricao: %s\n", tarefas[i].descricao);
+                    }
+                } else {
+                    // Lista as tarefas da categoria especificada
+                    int encontradas = 0;
+                    for(int i=0; i<*pos; i++){
+                        if (strcmp(tarefas[i].categoria, categoria) == 0) {
+                            printf("Prioridade: %d\t", tarefas[i].prioridade);
+                            printf("Categoria: %s\t", tarefas[i].categoria);
+                            printf("Descricao: %s\n", tarefas[i].descricao);
+                            encontradas++;
+                        }
+                    }
+                    // Se não encontrou nenhuma tarefa para a categoria especificada, exibe uma mensagem
+                    if (encontradas == 0) {
+                        printf("Nenhuma tarefa encontrada para a categoria '%s'\n", categoria);
+                    }
+                }
 
-    return OK; // Retorna OK para indicar sucesso na deleção da tarefa
-}
+                return OK; // Retorna OK para indicar sucesso na listagem das tarefas
+            }
 
-// Função para listar todas as tarefas
-ERROS listar(Tarefa tarefas[], int *pos) {
-    if (*pos == 0)
-        return SEM_TAREFAS; // Retorna SEM_TAREFAS se não houver tarefas
+            // Implementação da função para exportar as tarefas para um arquivo de texto
+            ERROS exportar(Tarefa tarefas[], int *pos) {
+                char nome_arquivo[100];
+                // Solicita ao usuário o nome do arquivo para exportar as tarefas
+                printf("Digite o nome do arquivo para exportar as tarefas: ");
+                fgets(nome_arquivo, 100, stdin);
+                FILE *f = fopen(nome_arquivo, "w");
+                if (f == NULL)
+                    return ABRIR; // Retorna ABRIR se houver erro ao abrir o arquivo
 
-    // Itera sobre todas as tarefas e imprime suas informações
-    for (int i = 0; i < *pos; i++) {
-        printf("Pos: %d\t", i + 1);
-        printf("Prioridade: %d\t", tarefas[i].prioridade);
-        printf("Categoria: %s\t", tarefas[i].categoria);
-        printf("Descricao: %s\n", tarefas[i].descricao);
-    }
+                // Escreve as tarefas no arquivo
+                for (int i = 0; i < *pos; i++) {
+                    fprintf(f, "Prioridade: %d\n", tarefas[i].prioridade);
+                    fprintf(f, "Categoria: %s", tarefas[i].categoria);
+                    fprintf(f, "Descricao: %s", tarefas[i].descricao);
+                }
 
-    return OK; // Retorna OK para indicar sucesso na listagem das tarefas
-}
+                fclose(f); // Fecha o arquivo
+                return OK; // Retorna OK para indicar sucesso na exportação das tarefas
+            }
 
-// Função para salvar as tarefas em um arquivo binário
-ERROS salvar(Tarefa tarefas[], int *pos) {
-    FILE *f = fopen("tarefas.bin", "wb");
-    if (f == NULL)
-        return ABRIR; // Retorna ABRIR em caso de erro na abertura do arquivo
+            // Implementação da função para salvar as tarefas em um arquivo binário
+            ERROS salvar(Tarefa tarefas[], int *pos){
+                FILE *f = fopen("tarefas.bin", "wb");
+                if(f == NULL)
+                    return ABRIR; // Retorna ABRIR se houver erro ao abrir o arquivo
 
-    int qtd = fwrite(tarefas, TOTAL, sizeof(Tarefa), f);
-    if (qtd == 0)
-        return ESCREVER; // Retorna ESCREVER em caso de erro na escrita das tarefas
+                // Escreve as tarefas no arquivo
+                int qtd = fwrite(tarefas, TOTAL, sizeof(Tarefa), f);
+                if(qtd == 0)
+                    return ESCREVER; // Retorna ESCREVER se houver erro ao escrever no arquivo
 
-    qtd = fwrite(pos, 1, sizeof(int), f);
-    if (qtd == 0)
-        return ESCREVER; // Retorna ESCREVER em caso de erro na escrita da posição
+                qtd = fwrite(pos, 1, sizeof(int), f);
+                if(qtd == 0)
+                    return ESCREVER; // Retorna ESCREVER se houver erro ao escrever no arquivo
 
-    if (fclose(f))
-        return FECHAR; // Retorna FECHAR em caso de erro no fechamento do arquivo
+                if(fclose(f))
+                    return FECHAR; // Retorna FECHAR se houver erro ao fechar o arquivo
 
-    return OK; // Retorna OK para indicar sucesso ao salvar as tarefas
-}
+                return OK; // Retorna OK para indicar sucesso ao salvar as tarefas
+            }
 
-// Função para carregar as tarefas de um arquivo binário
-ERROS carregar(Tarefa tarefas[], int *pos) {
-    FILE *f = fopen("tarefas.bin", "rb");
-    if (f == NULL)
-        return ABRIR; // Retorna ABRIR em caso de erro na abertura do arquivo
+            // Implementação da função para carregar as tarefas de um arquivo binário
+            ERROS carregar(Tarefa tarefas[], int *pos){
+                FILE *f = fopen("tarefas.bin", "rb");
+                if(f == NULL)
+                    return ABRIR; // Retorna ABRIR se houver erro ao abrir o arquivo
 
-    int qtd = fread(tarefas, TOTAL, sizeof(Tarefa), f);
-    if (qtd == 0)
-        return LER; // Retorna LER em caso
+                // Lê as tarefas do arquivo
+                int qtd = fread(tarefas, TOTAL, sizeof(Tarefa), f);
+                if(qtd == 0)
+                    return LER; // Retorna LER se houver erro ao ler do arquivo
+
+                qtd = fread(pos, 1, sizeof(int), f);
+                if(qtd == 0)
+                    return LER; // Retorna LER se houver erro ao ler do arquivo
+
+                if(fclose(f))
+                    return FECHAR; // Retorna FECHAR se houver erro ao fechar o arquivo
+
+                return OK; // Retorna OK para indicar sucesso ao carregar as tarefas do arquivo
+            }
+
+            // Função auxiliar para limpar o buffer do teclado
+            void clearBuffer(){
+                int c;
+                while ((c = getchar()) != '\n' && c != EOF);
+            }
